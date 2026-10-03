@@ -296,6 +296,42 @@ function generateCity(): {
     frame: 0,
   });
 
+  // Кот Рыжик
+  npcs.push({
+    x: 14 * TILE, y: 14 * TILE,
+    name: 'Кот Рыжик',
+    color: '#FF8C00',
+    hairColor: '#FF6347',
+    dialog: [
+      'Мяу! Я Рыжик! 🐱',
+      'Я живу в этом районе давно.',
+      'Знаю все секретные тропинки!',
+      'Иди на восток, там есть ключ 🔑',
+      'Только осторожнее с призраками 👻',
+    ],
+    dialogIndex: 0,
+    direction: 'left',
+    frame: 0,
+  });
+
+  // Пёс Персик
+  npcs.push({
+    x: 26 * TILE, y: 26 * TILE,
+    name: 'Пёс Персик',
+    color: '#DEB887',
+    hairColor: '#D2691E',
+    dialog: [
+      'Гав! Я Персик! 🐕',
+      'Не бойся моих братьев-собак!',
+      'Они просто играют в догонялки.',
+      'Но если прыгнешь на них сверху...',
+      'Они убегут! Попробуй! 💪',
+    ],
+    dialogIndex: 0,
+    direction: 'up',
+    frame: 0,
+  });
+
   // Коллекционные предметы
   const collectiblePositions: { x: number; y: number; type: Collectible['type'] }[] = [
     // Ключи (нужно 3 для открытия финальной двери)
@@ -574,6 +610,151 @@ function drawPerson(
     ctx.arc(headOx + eyeOffX + eyeSpread, headOy + s * 0.02, 2, 0, Math.PI * 2);
     ctx.fill();
   }
+
+  ctx.restore();
+}
+
+// ==========================================
+// Рисование кота
+// ==========================================
+function drawCat(
+  ctx: CanvasRenderingContext2D,
+  x: number, y: number,
+  direction: Direction,
+  frame: number,
+) {
+  ctx.save();
+  ctx.translate(x, y);
+
+  const legSwing = Math.sin(frame * 0.3) * 2;
+
+  // Тень
+  ctx.fillStyle = 'rgba(0,0,0,0.2)';
+  ctx.beginPath();
+  ctx.ellipse(0, 10, 12, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Тело
+  ctx.fillStyle = '#FF8C00';
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 12, 9, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Полоски
+  ctx.strokeStyle = '#FF6347';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(-4, -3);
+  ctx.lineTo(-4, 3);
+  ctx.moveTo(0, -4);
+  ctx.lineTo(0, 4);
+  ctx.moveTo(4, -3);
+  ctx.lineTo(4, 3);
+  ctx.stroke();
+
+  // Голова
+  let hx = 0, hy = -7;
+  if (direction === 'left') hx = -9;
+  if (direction === 'right') hx = 9;
+  if (direction === 'up') hy = -10;
+  if (direction === 'down') hy = -4;
+
+  ctx.fillStyle = '#FF8C00';
+  ctx.beginPath();
+  ctx.arc(hx, hy, 7, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Уши (треугольные)
+  ctx.fillStyle = '#FF6347';
+  ctx.beginPath();
+  ctx.moveTo(hx - 5, hy - 3);
+  ctx.lineTo(hx - 3, hy - 8);
+  ctx.lineTo(hx - 1, hy - 3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(hx + 5, hy - 3);
+  ctx.lineTo(hx + 3, hy - 8);
+  ctx.lineTo(hx + 1, hy - 3);
+  ctx.closePath();
+  ctx.fill();
+
+  // Внутренняя часть ушей
+  ctx.fillStyle = '#FFB6C1';
+  ctx.beginPath();
+  ctx.moveTo(hx - 4, hy - 4);
+  ctx.lineTo(hx - 3, hy - 7);
+  ctx.lineTo(hx - 2, hy - 4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(hx + 4, hy - 4);
+  ctx.lineTo(hx + 3, hy - 7);
+  ctx.lineTo(hx + 2, hy - 4);
+  ctx.closePath();
+  ctx.fill();
+
+  // Глаза
+  ctx.fillStyle = '#32CD32';
+  ctx.beginPath();
+  ctx.ellipse(hx - 2.5, hy, 2, 2.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(hx + 2.5, hy, 2, 2.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Зрачки
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.ellipse(hx - 2.5, hy, 1, 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(hx + 2.5, hy, 1, 2, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Нос
+  ctx.fillStyle = '#FF69B4';
+  ctx.beginPath();
+  ctx.moveTo(hx, hy + 2);
+  ctx.lineTo(hx - 1.5, hy + 3.5);
+  ctx.lineTo(hx + 1.5, hy + 3.5);
+  ctx.closePath();
+  ctx.fill();
+
+  // Усы
+  ctx.strokeStyle = '#FFF';
+  ctx.lineWidth = 0.5;
+  ctx.beginPath();
+  ctx.moveTo(hx - 3, hy + 2);
+  ctx.lineTo(hx - 7, hy + 1);
+  ctx.moveTo(hx - 3, hy + 3);
+  ctx.lineTo(hx - 7, hy + 3);
+  ctx.moveTo(hx + 3, hy + 2);
+  ctx.lineTo(hx + 7, hy + 1);
+  ctx.moveTo(hx + 3, hy + 3);
+  ctx.lineTo(hx + 7, hy + 3);
+  ctx.stroke();
+
+  // Лапы
+  ctx.fillStyle = '#FF6347';
+  const lx1 = direction === 'left' || direction === 'right' ? -7 : -5;
+  const lx2 = direction === 'left' || direction === 'right' ? 7 : 5;
+  ctx.beginPath();
+  ctx.ellipse(lx1, 8 + legSwing, 3, 2.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(lx2, 8 - legSwing, 3, 2.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Хвост
+  const tailWag = Math.sin(frame * 0.4) * 8;
+  ctx.strokeStyle = '#FF8C00';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0, -4);
+  ctx.quadraticCurveTo(tailWag, -15, tailWag * 1.2, -18);
+  ctx.stroke();
 
   ctx.restore();
 }
@@ -957,8 +1138,8 @@ export default function App() {
 
     gameRef.current = {
       player: {
-        x: 3 * TILE,
-        y: 3 * TILE,
+        x: 1 * TILE,
+        y: 1 * TILE,
         direction: 'down',
         speed: MOVE_SPEED,
         frame: 0,
@@ -1335,7 +1516,98 @@ export default function App() {
       const sx = npc.x - cx;
       const sy = npc.y - cy;
       if (sx < -40 || sx > w + 40 || sy < -40 || sy > h + 40) continue;
-      drawPerson(ctx, sx, sy, npc.direction, npc.frame, false, npc.color, npc.hairColor, '#FFDAB9', 26);
+      
+      // Определяем тип NPC и рисуем соответствующего персонажа
+      if (npc.name === 'Кот Рыжик') {
+        drawCat(ctx, sx, sy, npc.direction, npc.frame);
+      } else if (npc.name === 'Пёс Персик') {
+        // Рисуем пса Персика с уникальным цветом
+        ctx.save();
+        ctx.translate(sx, sy);
+        const legSwing = Math.sin(npc.frame * 0.3) * 3;
+        
+        // Тень
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.beginPath();
+        ctx.ellipse(0, 12, 14, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Тело (персиковый цвет)
+        ctx.fillStyle = '#DEB887';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 14, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Голова
+        let hx = 0, hy = -8;
+        if (npc.direction === 'left') hx = -10;
+        if (npc.direction === 'right') hx = 10;
+        if (npc.direction === 'up') hy = -12;
+        if (npc.direction === 'down') hy = -4;
+        
+        ctx.fillStyle = '#D2691E';
+        ctx.beginPath();
+        ctx.arc(hx, hy, 8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Уши (висячие)
+        ctx.fillStyle = '#A0522D';
+        ctx.beginPath();
+        ctx.ellipse(hx - 6, hy - 2, 4, 6, -0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(hx + 6, hy - 2, 4, 6, 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Глаза
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(hx - 3, hy, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(hx + 3, hy, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Нос
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(hx, hy + 3, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Язык (если смотрит вниз)
+        if (npc.direction === 'down') {
+          ctx.fillStyle = '#FF69B4';
+          ctx.beginPath();
+          ctx.ellipse(hx, hy + 5, 2, 3, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        
+        // Лапы
+        ctx.fillStyle = '#A0522D';
+        const lx1 = npc.direction === 'left' || npc.direction === 'right' ? -8 : -6;
+        const lx2 = npc.direction === 'left' || npc.direction === 'right' ? 8 : 6;
+        ctx.beginPath();
+        ctx.ellipse(lx1, 10 + legSwing, 4, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(lx2, 10 - legSwing, 4, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Хвост
+        const tailWag = Math.sin(npc.frame * 0.5) * 6;
+        ctx.strokeStyle = '#DEB887';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(0, -5);
+        ctx.quadraticCurveTo(tailWag, -18, tailWag * 1.3, -22);
+        ctx.stroke();
+        
+        ctx.restore();
+      } else {
+        // Обычный человек
+        drawPerson(ctx, sx, sy, npc.direction, npc.frame, false, npc.color, npc.hairColor, '#FFDAB9', 26);
+      }
 
       // Имя над NPC
       ctx.font = 'bold 10px sans-serif';
