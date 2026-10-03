@@ -554,6 +554,7 @@ export default function App() {
   const [dialogText, setDialogText] = useState<string[]>([]);
   const [dialogName, setDialogName] = useState('');
   const [dialogStep, setDialogStep] = useState(0);
+  const [nearbyNPC, setNearbyNPC] = useState<NPC | null>(null);
 
   // Все игровые данные в одном ref
   const gameRef = useRef<{
@@ -577,6 +578,8 @@ export default function App() {
     joystickActive: boolean;
     joystickCenterX: number;
     joystickCenterY: number;
+    // Ближайший NPC для кнопки взаимодействия
+    nearestNPCForButton: NPC | null;
   } | null>(null);
 
   const animRef = useRef(0);
@@ -587,20 +590,19 @@ export default function App() {
   useEffect(() => { playerRef.current = selectedPlayer; }, [selectedPlayer]);
 
   // Коллизии
-  const checkCollision = (x: number, y: number, size: number, buildings: Building[], trees: Tree[]): boolean => {
+  const checkCollision = (x: number, y: number, size: number, _buildings: Building[], trees: Tree[]): boolean => {
     const half = size / 2;
-    for (const b of buildings) {
-      if (b.type === 'park') continue;
-      if (b.type === 'fountain') {
-        const cx = b.x + b.w/2, cy = b.y + b.h/2;
-        if (Math.sqrt((x-cx)**2 + (y-cy)**2) < b.w*0.3 + half) return true;
-        continue;
-      }
-      if (x+half > b.x && x-half < b.x+b.w && y+half > b.y && y-half < b.y+b.h) return true;
-    }
+    // Здания проходимы — можно заходить внутрь!
+    // Коллизия только с фонтаном и деревьями
     for (const t of trees) {
       const dx = x - t.x, dy = y - (t.y + t.size*0.2);
       if (Math.sqrt(dx*dx + dy*dy) < t.size*0.3 + half*0.5) return true;
+    }
+    // Фонтан — непроходимый
+    const fountain = _buildings.find(b => b.type === 'fountain');
+    if (fountain) {
+      const cx = fountain.x + fountain.w/2, cy = fountain.y + fountain.h/2;
+      if (Math.sqrt((x-cx)**2 + (y-cy)**2) < fountain.w*0.3 + half) return true;
     }
     return false;
   };
@@ -645,6 +647,7 @@ export default function App() {
       joystickActive: false,
       joystickCenterX: 0,
       joystickCenterY: 0,
+      nearestNPCForButton: null,
     };
   };
 
@@ -749,20 +752,21 @@ export default function App() {
             }
           }
 
-          // NPC
+          // NPC — ищем ближайшего для кнопки взаимодействия
+          let closestNPC: NPC | null = null;
+          let closestDist = Infinity;
           for (const npc of npcs) {
             npc.frame++;
             const dist = Math.sqrt((player.x-npc.x)**2 + (player.y-npc.y)**2);
-            if (dist < 40 && !g.dialogActive) {
-              g.dialogActive = true;
-              g.currentNPC = npc;
-              g.dialogStepLocal = 0;
-              setDialogText(npc.dialog);
-              setDialogName(npc.name);
-              setDialogStep(0);
-              setGameState('DIALOG');
-              sound.dialog();
+            if (dist < 55 && dist < closestDist) {
+              closestDist = dist;
+              closestNPC = npc;
             }
+          }
+          // Обновляем ближайшего NPC для кнопки
+          if (closestNPC !== g.nearestNPCForButton) {
+            g.nearestNPCForButton = closestNPC;
+            setNearbyNPC(closestNPC);
           }
 
           // Враги
@@ -883,9 +887,14 @@ export default function App() {
           ctx.fillStyle = '#FFF';
           ctx.fillText(npc.name, sx, sy-22);
           const pDist = Math.sqrt((player.x-npc.x)**2 + (player.y-npc.y)**2);
-          if (pDist < 60 && !g.dialogActive) {
-            ctx.font = '14px serif';
-            ctx.fillText('💬', sx, sy-30+Math.sin(g.frame*0.08)*3);
+          if (pDist < 55 && !g.dialogActive) {
+            // Индикатор — можно поговорить
+            ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillStyle = '#FFD700';
+            ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
+            const bobY = Math.sin(g.frame*0.08)*3;
+            ctx.strokeText('💬 Тап!', sx, sy-30+bobY);
+            ctx.fillText('💬 Тап!', sx, sy-30+bobY);
           }
         }
         // Враги
@@ -999,6 +1008,21 @@ export default function App() {
     setGameState('MENU');
     setSelectedPlayer(null);
     setScore(0);
+  };
+
+  const handleTalkToNPC = () => {
+    const g = gameRef.current;
+    if (!g || !g.nearestNPCForButton) return;
+    const npc = g.nearestNPCForButton;
+    g.dialogActive = true;
+    g.currentNPC = npc;
+    g.dialogStepLocal = 0;
+    setDialogText(npc.dialog);
+    setDialogName(npc.name);
+    setDialogStep(0);
+    setNearbyNPC(null);
+    setGameState('DIALOG');
+    sound.dialog();
   };
 
   const handleDialogNext = () => {
@@ -1120,13 +1144,27 @@ export default function App() {
 
       {/* ДИАЛОГ */}
       {gameState === 'DIALOG' && (
-        <div className="absolute inset-0 flex items-end justify-center z-20 p-4 pointer-events-auto"
-          onClick={handleDialogNext}
-          onTouchStart={(e) => { e.preventDefault(); handleDialogNext(); }}>
-          <div className="bg-gray-900/95 border-2 border-yellow-400 rounded-2xl p-4 max-w-md w-full mb-8">
+        <div className="absolute inset-0 flex items-end justify-center z-20 p-4 pointer-events-none">
+          <div className="bg-gray-900/95 border-2 border-yellow-400 rounded-2xl p-4 max-w-md w-full mb-8 pointer-events-auto">
             <p className="text-yellow-300 font-bold text-sm mb-1">{dialogName}</p>
-            <p className="text-white text-base">{dialogText[dialogStep]}</p>
-            <p className="text-gray-400 text-xs mt-2 text-right">{dialogStep+1}/{dialogText.length} — нажми ▶</p>
+            <p className="text-white text-base mb-3">{dialogText[dialogStep]}</p>
+            <div className="flex justify-end gap-2">
+              {dialogStep < dialogText.length - 1 ? (
+                <button
+                  onClick={handleDialogNext}
+                  onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); handleDialogNext(); }}
+                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-lg text-sm active:scale-95 transition-all">
+                  Далее ▶
+                </button>
+              ) : (
+                <button
+                  onClick={handleDialogNext}
+                  onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); handleDialogNext(); }}
+                  className="px-4 py-2 bg-green-500 hover:bg-green-400 text-white font-bold rounded-lg text-sm active:scale-95 transition-all">
+                  Закрыть ✓
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -1168,6 +1206,18 @@ export default function App() {
               🔄 Заново
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Кнопка разговора */}
+      {gameState === 'PLAYING' && nearbyNPC && (
+        <div className="absolute bottom-4 right-4 z-20 pointer-events-auto">
+          <button
+            onClick={handleTalkToNPC}
+            onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); handleTalkToNPC(); }}
+            className="px-5 py-3 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-full text-base shadow-lg shadow-yellow-500/30 active:scale-95 transition-all animate-pulse border-2 border-yellow-300">
+            💬 Поговорить
+          </button>
         </div>
       )}
 
