@@ -179,7 +179,7 @@ function generateCity() {
   const collectibleDefs = [
     { x: 4, y: 4, type: 'key' as const },
     { x: 28, y: 4, type: 'key' as const },
-    { x: 20, y: 18, type: 'key' as const },
+    { x: 21, y: 18, type: 'key' as const },
     { x: 6, y: 13, type: 'coin' as const }, { x: 14, y: 7, type: 'coin' as const },
     { x: 22, y: 13, type: 'coin' as const }, { x: 30, y: 7, type: 'coin' as const },
     { x: 6, y: 26, type: 'coin' as const }, { x: 14, y: 30, type: 'coin' as const },
